@@ -125,8 +125,8 @@ export function drawChart(key, labels, datasets, sunTimes) {
       scales: {
         x: { ticks: { color: '#556677', maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } }, grid: { color: '#1e334730' } },
         y: {
-          min: ['precip', 'humidity', 'skyCover'].includes(key) ? 0 : undefined,
-          max: ['precip', 'humidity', 'skyCover'].includes(key) ? 100 : undefined,
+          min: ['precip', 'humidity', 'skyCover'].includes(key) ? 0 : (() => { const vals = chartDatasets.flatMap(d => d.data.filter(v => v != null)); return Math.floor(Math.min(...vals) - 5); })(),
+          max: ['precip', 'humidity', 'skyCover'].includes(key) ? 100 : (() => { const vals = chartDatasets.flatMap(d => d.data.filter(v => v != null)); return Math.ceil(Math.max(...vals) + 5); })(),
           ticks: { color: '#556677', font: { size: 11 } }, grid: { color: '#1e334730' }
         }
       }
