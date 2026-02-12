@@ -1,13 +1,86 @@
 let charts = {};
 
-export function drawChart(key, labels, datasets) {
+function buildSunAnnotations(labels, sunTimes) {
+  if (!sunTimes || !sunTimes.length) return {};
+  const annotations = {};
+  const labelTimes = labels.map((_, i) => labels[i]._time); // we'll attach _time to labels
+
+  sunTimes.forEach((st, si) => {
+    [
+      { time: st.sunrise, icon: '🌅', key: `sr${si}`, color: '#ffd54f' },
+      { time: st.sunset, icon: '🌇', key: `ss${si}`, color: '#ff8a65' }
+    ].forEach(({ time, icon, key, color }) => {
+      const t = time.getTime();
+      // Find the label index closest to this time
+      let bestIdx = -1, bestDist = Infinity;
+      for (let i = 0; i < labelTimes.length; i++) {
+        const dist = Math.abs(labelTimes[i] - t);
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+      }
+      if (bestIdx >= 0 && bestDist < 3600000 * 1.5) {
+        // Interpolate fractional position
+        const frac = bestIdx + (t - labelTimes[bestIdx]) / 3600000;
+        const timeStr = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        annotations[key + '_line'] = {
+          type: 'line',
+          xMin: frac, xMax: frac,
+          borderColor: color + '80',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          label: {
+            display: true,
+            content: `${icon} ${timeStr}`,
+            position: 'start',
+            backgroundColor: 'transparent',
+            color: color,
+            font: { size: 10, weight: 'normal' },
+            padding: 2
+          }
+        };
+      }
+    });
+  });
+
+  // Shade nighttime periods
+  // Before first sunrise
+  if (sunTimes.length > 0) {
+    const firstSunrise = sunTimes[0].sunrise.getTime();
+    const firstIdx = labelTimes.findIndex(t => t >= firstSunrise);
+    if (firstIdx > 0) {
+      annotations['night_pre'] = {
+        type: 'box', xMin: 0, xMax: firstIdx,
+        backgroundColor: 'rgba(0,0,0,0.12)', borderWidth: 0
+      };
+    }
+    // Between each sunset and next sunrise
+    for (let i = 0; i < sunTimes.length; i++) {
+      const ssTime = sunTimes[i].sunset.getTime();
+      const nextSr = sunTimes[i + 1]?.sunrise?.getTime();
+      let ssIdx = -1, srIdx = labelTimes.length;
+      for (let j = 0; j < labelTimes.length; j++) {
+        if (ssIdx < 0 && labelTimes[j] >= ssTime) ssIdx = j;
+        if (nextSr && labelTimes[j] >= nextSr) { srIdx = j; break; }
+      }
+      if (ssIdx >= 0) {
+        const end = nextSr ? Math.min(srIdx, labelTimes.length) : labelTimes.length;
+        annotations[`night_${i}`] = {
+          type: 'box', xMin: ssIdx, xMax: end,
+          backgroundColor: 'rgba(0,0,0,0.12)', borderWidth: 0
+        };
+      }
+    }
+  }
+
+  return annotations;
+}
+
+export function drawChart(key, labels, datasets, sunTimes) {
   const ds = datasets[key];
   if (charts.main) charts.main.destroy();
   const ctx = document.getElementById('chart').getContext('2d');
 
   const chartDatasets = [];
 
-  // Primary dataset
   const gradient = ctx.createLinearGradient(0, 0, 0, 200);
   gradient.addColorStop(0, ds.color + '40');
   gradient.addColorStop(1, ds.color + '05');
@@ -18,7 +91,6 @@ export function drawChart(key, labels, datasets) {
     tension: .4, fill: ds.fill
   });
 
-  // Secondary dataset (e.g., wind gusts)
   if (ds.secondary) {
     const s = ds.secondary;
     chartDatasets.push({
@@ -33,9 +105,11 @@ export function drawChart(key, labels, datasets) {
   const unitMap = { temp: '°F', wind: 'mph', precip: '%', humidity: '%', skyCover: '%' };
   const unit = unitMap[key] || '';
 
+  const annotations = buildSunAnnotations(labels, sunTimes);
+
   charts.main = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: chartDatasets },
+    data: { labels: labels.map(l => l.text), datasets: chartDatasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { intersect: false, mode: 'index' },
@@ -46,7 +120,8 @@ export function drawChart(key, labels, datasets) {
           borderColor: '#1e3347', borderWidth: 1, padding: 10,
           displayColors: chartDatasets.length > 1,
           callbacks: { label: i => ` ${i.dataset.label}: ${i.parsed.y}${unit}` }
-        }
+        },
+        annotation: { annotations }
       },
       scales: {
         x: { ticks: { color: '#556677', maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } }, grid: { color: '#1e334730' } },

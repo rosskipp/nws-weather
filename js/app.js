@@ -1,4 +1,4 @@
-import { fetchWeatherData, parseGridTimeSeries } from './api.js';
+import { fetchWeatherData, parseGridTimeSeries, fetchSunTimes } from './api.js';
 import { drawChart } from './charts.js';
 
 const DEFAULT_LAT = 39.9239, DEFAULT_LON = -105.0886;
@@ -7,19 +7,29 @@ async function loadWeather(lat, lon) {
   const app = document.getElementById('app');
   app.innerHTML = '<div class="loading"><div class="spinner"></div>Loading forecast…</div>';
   try {
-    const { locName, hourly, forecast, gridProperties } = await fetchWeatherData(lat, lon);
-    render(locName, hourly, forecast, gridProperties);
+    const [{ locName, hourly, forecast, gridProperties }, sunTimes] = await Promise.all([
+      fetchWeatherData(lat, lon),
+      fetchSunTimes(lat, lon, 4)
+    ]);
+    render(locName, hourly, forecast, gridProperties, sunTimes);
     document.getElementById('updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
   } catch (e) {
     app.innerHTML = `<div class="error">⚠️ ${e.message}<br><small>Try again or search a different location</small></div>`;
   }
 }
 
-function render(location, hourly, periods, gridProps) {
+function render(location, hourly, periods, gridProps, sunTimes) {
   const now = hourly[0];
   const h = hourly.slice(0, 72);
   const app = document.getElementById('app');
   const windDir = now.windDirection;
+
+  const todaySun = sunTimes?.[0];
+  const sunSummary = todaySun ? `
+    <div class="sun-times">
+      <span>🌅 ${todaySun.sunrise.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+      <span>🌇 ${todaySun.sunset.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+    </div>` : '';
 
   app.innerHTML = `
     <div class="location-name">📍 ${location}</div>
@@ -31,6 +41,7 @@ function render(location, hourly, periods, gridProps) {
         <span>💧 Humidity <b>${now.relativeHumidity?.value ?? '--'}%</b></span>
         <span>🌧 Precip <b>${now.probabilityOfPrecipitation?.value ?? 0}%</b></span>
       </div>
+      ${sunSummary}
     </div>
     
     <div class="section-title"><span>📊</span> Hourly Charts</div>
@@ -62,7 +73,10 @@ function render(location, hourly, periods, gridProps) {
 
   const labels = h.map(p => {
     const d = new Date(p.startTime);
-    return d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric' });
+    return {
+      text: d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric' }),
+      _time: d.getTime()
+    };
   });
   const skyCoverData = parseGridTimeSeries(gridProps?.skyCover, h);
   const windGustData = h.map(p => {
@@ -82,14 +96,14 @@ function render(location, hourly, periods, gridProps) {
     skyCover: { label: 'Sky Cover (%)', data: skyCoverData, color: '#78909c', fill: true }
   };
 
-  drawChart('temp', labels, datasets);
+  drawChart('temp', labels, datasets, sunTimes);
 
   document.getElementById('chartTabs').addEventListener('click', e => {
     const tab = e.target.closest('.tab');
     if (!tab) return;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    drawChart(tab.dataset.chart, labels, datasets);
+    drawChart(tab.dataset.chart, labels, datasets, sunTimes);
   });
 }
 
