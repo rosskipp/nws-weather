@@ -20,7 +20,10 @@ async function loadWeather(lat, lon) {
 
 function render(location, hourly, periods, gridProps, sunTimes) {
   const now = hourly[0];
-  const h = hourly.slice(0, 72);
+  const allHours = hourly.slice(0, 156); // up to ~6.5 days
+  let windowStart = 0;
+  const WINDOW_SIZE = 48;
+  const h = allHours; // keep full set, we'll slice in chart rendering
   const app = document.getElementById('app');
   const windDir = now.windDirection;
 
@@ -45,6 +48,11 @@ function render(location, hourly, periods, gridProps, sunTimes) {
     </div>
     
     <div class="section-title"><span>📊</span> Hourly Charts</div>
+    <div class="time-nav" id="timeNav">
+      <button id="prevDay" class="time-btn" disabled>◀ Prev</button>
+      <span id="timeRange" class="time-range"></span>
+      <button id="nextDay" class="time-btn">Next ▶</button>
+    </div>
     <div class="tabs" id="chartTabs">
       <div class="tab active" data-chart="temp">Temp</div>
       <div class="tab" data-chart="precip">Precip</div>
@@ -71,39 +79,81 @@ function render(location, hourly, periods, gridProps, sunTimes) {
     </div>`;
   });
 
-  const labels = h.map(p => {
+  const allLabels = h.map(p => {
     const d = new Date(p.startTime);
     return {
       text: d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric' }),
       _time: d.getTime()
     };
   });
-  const skyCoverData = parseGridTimeSeries(gridProps?.skyCover, h);
-  const windGustData = h.map(p => {
+  const allSkyCover = parseGridTimeSeries(gridProps?.skyCover, h);
+  const allWindGusts = h.map(p => {
     if (!p.windGust) return null;
     const parsed = parseInt(p.windGust);
     return isNaN(parsed) ? null : parsed;
   });
 
-  const datasets = {
+  const allDatasets = {
     temp: { label: 'Temperature (°F)', data: h.map(p => p.temperature), color: '#4fc3f7', fill: true },
     precip: { label: 'Precipitation (%)', data: h.map(p => p.probabilityOfPrecipitation?.value ?? 0), color: '#66bb6a', fill: true },
     wind: {
       label: 'Wind Speed (mph)', data: h.map(p => parseInt(p.windSpeed)), color: '#ffa726', fill: false,
-      secondary: { label: 'Wind Gusts (mph)', data: windGustData, color: '#ef5350' }
+      secondary: { label: 'Wind Gusts (mph)', data: allWindGusts, color: '#ef5350' }
     },
     humidity: { label: 'Humidity (%)', data: h.map(p => p.relativeHumidity?.value ?? 0), color: '#ab47bc', fill: true },
-    skyCover: { label: 'Sky Cover (%)', data: skyCoverData, color: '#78909c', fill: true }
+    skyCover: { label: 'Sky Cover (%)', data: allSkyCover, color: '#78909c', fill: true }
   };
 
-  drawChart('temp', labels, datasets, sunTimes);
+  let activeChart = 'temp';
+
+  function sliceDatasets(start, size) {
+    const sliced = {};
+    for (const [key, ds] of Object.entries(allDatasets)) {
+      sliced[key] = { ...ds, data: ds.data.slice(start, start + size) };
+      if (ds.secondary) {
+        sliced[key].secondary = { ...ds.secondary, data: ds.secondary.data.slice(start, start + size) };
+      }
+    }
+    return sliced;
+  }
+
+  function updateTimeRange() {
+    const startDate = new Date(h[windowStart]?.startTime);
+    const endIdx = Math.min(windowStart + WINDOW_SIZE - 1, h.length - 1);
+    const endDate = new Date(h[endIdx]?.startTime);
+    const fmt = { weekday: 'short', month: 'short', day: 'numeric' };
+    document.getElementById('timeRange').textContent = 
+      `${startDate.toLocaleDateString('en-US', fmt)} – ${endDate.toLocaleDateString('en-US', fmt)}`;
+    document.getElementById('prevDay').disabled = windowStart === 0;
+    document.getElementById('nextDay').disabled = windowStart + WINDOW_SIZE >= h.length;
+  }
+
+  function renderChart() {
+    const labels = allLabels.slice(windowStart, windowStart + WINDOW_SIZE);
+    const datasets = sliceDatasets(windowStart, WINDOW_SIZE);
+    drawChart(activeChart, labels, datasets, sunTimes);
+    updateTimeRange();
+  }
+
+  renderChart();
+
+  document.getElementById('prevDay').addEventListener('click', () => {
+    windowStart = Math.max(0, windowStart - 24);
+    renderChart();
+  });
+
+  document.getElementById('nextDay').addEventListener('click', () => {
+    windowStart = Math.min(h.length - WINDOW_SIZE, windowStart + 24);
+    renderChart();
+  });
 
   document.getElementById('chartTabs').addEventListener('click', e => {
     const tab = e.target.closest('.tab');
     if (!tab) return;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    drawChart(tab.dataset.chart, labels, datasets, sunTimes);
+    activeChart = tab.dataset.chart;
+    renderChart();
   });
 }
 
