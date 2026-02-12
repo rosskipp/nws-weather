@@ -124,7 +124,11 @@ export function drawChart(key, labels, datasets, sunTimes) {
       },
       scales: {
         x: { ticks: { color: '#556677', maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } }, grid: { color: '#1e334730' } },
-        y: { ticks: { color: '#556677', font: { size: 11 } }, grid: { color: '#1e334730' } }
+        y: {
+          min: ['precip', 'humidity', 'skyCover'].includes(key) ? 0 : undefined,
+          max: ['precip', 'humidity', 'skyCover'].includes(key) ? 100 : undefined,
+          ticks: { color: '#556677', font: { size: 11 } }, grid: { color: '#1e334730' }
+        }
       }
     }
   });
