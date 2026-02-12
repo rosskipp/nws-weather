@@ -20,21 +20,20 @@ function buildSunAnnotations(labels, sunTimes) {
       if (bestIdx >= 0 && bestDist < 3600000 * 1.5) {
         // Interpolate fractional position
         const frac = bestIdx + (t - labelTimes[bestIdx]) / 3600000;
-        const timeStr = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
         annotations[key + '_line'] = {
           type: 'line',
           xMin: frac, xMax: frac,
-          borderColor: color + '80',
-          borderWidth: 1.5,
-          borderDash: [6, 4],
+          borderColor: color + '60',
+          borderWidth: 1,
+          borderDash: [4, 4],
           label: {
             display: true,
-            content: `${icon} ${timeStr}`,
-            position: 'start',
+            content: icon,
+            position: 'end',
             backgroundColor: 'transparent',
             color: color,
-            font: { size: 10, weight: 'normal' },
-            padding: 2
+            font: { size: 11, weight: 'normal' },
+            padding: 1
           }
         };
       }
@@ -49,7 +48,7 @@ function buildSunAnnotations(labels, sunTimes) {
     if (firstIdx > 0) {
       annotations['night_pre'] = {
         type: 'box', xMin: 0, xMax: firstIdx,
-        backgroundColor: 'rgba(0,0,0,0.12)', borderWidth: 0
+        backgroundColor: 'rgba(0,0,0,0.06)', borderWidth: 0
       };
     }
     // Between each sunset and next sunrise
@@ -65,7 +64,7 @@ function buildSunAnnotations(labels, sunTimes) {
         const end = nextSr ? Math.min(srIdx, labelTimes.length) : labelTimes.length;
         annotations[`night_${i}`] = {
           type: 'box', xMin: ssIdx, xMax: end,
-          backgroundColor: 'rgba(0,0,0,0.12)', borderWidth: 0
+          backgroundColor: 'rgba(0,0,0,0.06)', borderWidth: 0
         };
       }
     }

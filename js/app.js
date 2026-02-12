@@ -46,14 +46,14 @@ function render(location, hourly, periods, gridProps, sunTimes) {
     
     <div class="section-title"><span>📊</span> Hourly Charts</div>
     <div class="tabs" id="chartTabs">
-      <div class="tab active" data-chart="temp">Temperature</div>
-      <div class="tab" data-chart="precip">Precipitation</div>
+      <div class="tab active" data-chart="temp">Temp</div>
+      <div class="tab" data-chart="precip">Precip</div>
       <div class="tab" data-chart="wind">Wind</div>
-      <div class="tab" data-chart="humidity">Humidity</div>
-      <div class="tab" data-chart="skyCover">Sky Cover</div>
+      <div class="tab" data-chart="humidity">Humid</div>
+      <div class="tab" data-chart="skyCover">Sky</div>
     </div>
     <div class="chart-card">
-      <canvas id="chart" height="200"></canvas>
+      <div style="position:relative;height:220px;touch-action:pan-x"><canvas id="chart"></canvas></div>
     </div>
     
     <div class="section-title"><span>📋</span> Extended Forecast</div>

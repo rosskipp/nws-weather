@@ -44,8 +44,21 @@ header h1{font-size:1.4rem;font-weight:600;color:var(--accent)}
 .tab.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 .updated{text-align:center;font-size:.75rem;color:var(--text2);margin-top:20px;padding-bottom:20px}
 @media(max-width:600px){
+  .container{padding:10px}
+  header{padding:12px 0 6px}
+  header h1{font-size:1.2rem}
+  .search-box{margin:10px auto}
+  .search-box input{padding:11px 16px 11px 40px;font-size:.9rem}
+  .current{padding:20px 16px;margin-bottom:14px}
   .current .temp{font-size:3rem}
-  .current .details{gap:16px}
-  .forecast-card{flex-wrap:wrap;gap:8px}
+  .current .details{gap:12px}
+  .sun-times{gap:16px}
+  .section-title{margin:16px 0 8px;font-size:1rem}
+  .chart-card{padding:12px 10px;margin-bottom:12px;border-radius:12px}
+  .tabs{gap:4px;margin-bottom:12px}
+  .tab{padding:7px 14px;font-size:.78rem}
+  .forecast-cards{gap:8px}
+  .forecast-card{flex-wrap:wrap;gap:8px;padding:12px 14px;border-radius:12px}
   .forecast-card .period-name{min-width:auto}
+  .location-name{font-size:1rem;margin-bottom:14px}
 }
