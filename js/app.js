@@ -1,4 +1,4 @@
-import { fetchWeatherData } from './api.js';
+import { fetchWeatherData, parseGridTimeSeries } from './api.js';
 import { drawChart } from './charts.js';
 
 const DEFAULT_LAT = 39.9239, DEFAULT_LON = -105.0886;
@@ -7,15 +7,15 @@ async function loadWeather(lat, lon) {
   const app = document.getElementById('app');
   app.innerHTML = '<div class="loading"><div class="spinner"></div>Loading forecast…</div>';
   try {
-    const { locName, hourly, forecast } = await fetchWeatherData(lat, lon);
-    render(locName, hourly, forecast);
+    const { locName, hourly, forecast, gridProperties } = await fetchWeatherData(lat, lon);
+    render(locName, hourly, forecast, gridProperties);
     document.getElementById('updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
   } catch (e) {
     app.innerHTML = `<div class="error">⚠️ ${e.message}<br><small>Try again or search a different location</small></div>`;
   }
 }
 
-function render(location, hourly, periods) {
+function render(location, hourly, periods, gridProps) {
   const now = hourly[0];
   const h = hourly.slice(0, 72);
   const app = document.getElementById('app');
@@ -39,6 +39,7 @@ function render(location, hourly, periods) {
       <div class="tab" data-chart="precip">Precipitation</div>
       <div class="tab" data-chart="wind">Wind</div>
       <div class="tab" data-chart="humidity">Humidity</div>
+      <div class="tab" data-chart="skyCover">Sky Cover</div>
     </div>
     <div class="chart-card">
       <canvas id="chart" height="200"></canvas>
@@ -63,11 +64,22 @@ function render(location, hourly, periods) {
     const d = new Date(p.startTime);
     return d.toLocaleDateString('en-US', { weekday: 'short' }) + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric' });
   });
+  const skyCoverData = parseGridTimeSeries(gridProps?.skyCover, h);
+  const windGustData = h.map(p => {
+    if (!p.windGust) return null;
+    const parsed = parseInt(p.windGust);
+    return isNaN(parsed) ? null : parsed;
+  });
+
   const datasets = {
     temp: { label: 'Temperature (°F)', data: h.map(p => p.temperature), color: '#4fc3f7', fill: true },
     precip: { label: 'Precipitation (%)', data: h.map(p => p.probabilityOfPrecipitation?.value ?? 0), color: '#66bb6a', fill: true },
-    wind: { label: 'Wind Speed (mph)', data: h.map(p => parseInt(p.windSpeed)), color: '#ffa726', fill: false },
-    humidity: { label: 'Humidity (%)', data: h.map(p => p.relativeHumidity?.value ?? 0), color: '#ab47bc', fill: true }
+    wind: {
+      label: 'Wind Speed (mph)', data: h.map(p => parseInt(p.windSpeed)), color: '#ffa726', fill: false,
+      secondary: { label: 'Wind Gusts (mph)', data: windGustData, color: '#ef5350' }
+    },
+    humidity: { label: 'Humidity (%)', data: h.map(p => p.relativeHumidity?.value ?? 0), color: '#ab47bc', fill: true },
+    skyCover: { label: 'Sky Cover (%)', data: skyCoverData, color: '#78909c', fill: true }
   };
 
   drawChart('temp', labels, datasets);
