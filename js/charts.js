@@ -7,8 +7,8 @@ function buildSunAnnotations(labels, sunTimes) {
 
   sunTimes.forEach((st, si) => {
     [
-      { time: st.sunrise, icon: '🌅', key: `sr${si}`, color: '#ffd54f' },
-      { time: st.sunset, icon: '🌇', key: `ss${si}`, color: '#ff8a65' }
+      { time: st.sunrise, icon: '☀️', key: `sr${si}`, color: '#ffd54f' },
+      { time: st.sunset, icon: '🌙', key: `ss${si}`, color: '#ff8a65' }
     ].forEach(({ time, icon, key, color }) => {
       const t = time.getTime();
       // Find the label index closest to this time
@@ -32,8 +32,8 @@ function buildSunAnnotations(labels, sunTimes) {
             position: 'end',
             backgroundColor: 'transparent',
             color: color,
-            font: { size: 11, weight: 'normal' },
-            padding: 1
+            font: { size: labels.length > 72 ? 8 : 11, weight: 'normal' },
+            padding: 0
           }
         };
       }
