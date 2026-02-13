@@ -87,7 +87,7 @@ export function drawChart(key, labels, datasets, sunTimes) {
     label: ds.label, data: ds.data,
     borderColor: ds.color, backgroundColor: ds.fill ? gradient : 'transparent',
     borderWidth: 2, pointRadius: 0, pointHitRadius: 10,
-    stepped: 'before', fill: ds.fill
+    stepped: 'before', tension: 0, fill: ds.fill
   });
 
   if (ds.secondary) {
@@ -96,7 +96,7 @@ export function drawChart(key, labels, datasets, sunTimes) {
       label: s.label, data: s.data,
       borderColor: s.color, backgroundColor: 'transparent',
       borderWidth: 2, pointRadius: 0, pointHitRadius: 10,
-      stepped: 'before', fill: false,
+      stepped: 'before', tension: 0, fill: false,
       borderDash: [6, 3]
     });
   }
