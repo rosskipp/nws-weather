@@ -24,7 +24,7 @@ async function loadWeather(lat, lon) {
   try {
     const [{ locName, hourly, forecast, gridProperties }, sunTimes] = await Promise.all([
       fetchWeatherData(lat, lon),
-      fetchSunTimes(lat, lon, 4)
+      fetchSunTimes(lat, lon, 7)
     ]);
     render(locName, hourly, forecast, gridProperties, sunTimes);
     document.getElementById('updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
