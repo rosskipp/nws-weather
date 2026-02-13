@@ -87,11 +87,8 @@ function render(location, hourly, periods, gridProps, sunTimes) {
     };
   });
   const allSkyCover = parseGridTimeSeries(gridProps?.skyCover, h);
-  const allWindGusts = h.map(p => {
-    if (!p.windGust) return null;
-    const parsed = parseInt(p.windGust);
-    return isNaN(parsed) ? null : parsed;
-  });
+  const allWindGustsKmh = parseGridTimeSeries(gridProps?.windGust, h);
+  const allWindGusts = allWindGustsKmh.map(v => v != null ? Math.round(v * 0.621371) : null);
 
   const allDatasets = {
     temp: { label: 'Temperature (°F)', data: h.map(p => p.temperature), color: '#4fc3f7', fill: true },
