@@ -150,12 +150,6 @@ function render(location, hourly, periods, gridProps, sunTimes) {
   }
 
   function updateTimeRange() {
-    const startDate = new Date(h[windowStart]?.startTime);
-    const endIdx = Math.min(windowStart + WINDOW_SIZE - 1, h.length - 1);
-    const endDate = new Date(h[endIdx]?.startTime);
-    const fmt = { weekday: 'short', month: 'short', day: 'numeric' };
-    document.getElementById('timeRange').textContent = 
-      `${startDate.toLocaleDateString('en-US', fmt)} – ${endDate.toLocaleDateString('en-US', fmt)}`;
     document.getElementById('prevDay').disabled = windowStart === 0;
     document.getElementById('nextDay').disabled = windowStart + WINDOW_SIZE >= h.length;
   }
