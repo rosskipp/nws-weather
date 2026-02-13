@@ -37,7 +37,7 @@ function render(location, hourly, periods, gridProps, sunTimes) {
   const now = hourly[0];
   const allHours = hourly.slice(0, 156); // up to ~6.5 days
   let windowStart = 0;
-  const WINDOW_SIZE = 48;
+  let WINDOW_SIZE = 48;
   const h = allHours; // keep full set, we'll slice in chart rendering
   const app = document.getElementById('app');
   const windDir = now.windDirection;
@@ -70,9 +70,13 @@ function render(location, hourly, periods, gridProps, sunTimes) {
     
     <div class="section-title"><span>📊</span> Hourly Charts</div>
     <div class="time-nav" id="timeNav">
-      <button id="prevDay" class="time-btn" disabled>◀ Prev</button>
-      <span id="timeRange" class="time-range"></span>
-      <button id="nextDay" class="time-btn">Next ▶</button>
+      <button id="prevDay" class="time-btn" disabled>◀</button>
+      <div class="range-pills" id="rangePills">
+        <span class="range-pill active" data-hours="48">2d</span>
+        <span class="range-pill" data-hours="96">4d</span>
+        <span class="range-pill" data-hours="156">All</span>
+      </div>
+      <button id="nextDay" class="time-btn">▶</button>
     </div>
     <div class="tabs" id="chartTabs">
       <div class="tab active" data-chart="temp">Temp</div>
@@ -172,6 +176,16 @@ function render(location, hourly, periods, gridProps, sunTimes) {
 
   document.getElementById('nextDay').addEventListener('click', () => {
     windowStart = Math.min(h.length - WINDOW_SIZE, windowStart + 24);
+    renderChart();
+  });
+
+  document.getElementById('rangePills').addEventListener('click', e => {
+    const pill = e.target.closest('.range-pill');
+    if (!pill) return;
+    document.querySelectorAll('.range-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    WINDOW_SIZE = Math.min(parseInt(pill.dataset.hours), h.length);
+    windowStart = Math.min(windowStart, Math.max(0, h.length - WINDOW_SIZE));
     renderChart();
   });
 
