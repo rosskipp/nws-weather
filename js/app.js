@@ -3,6 +3,21 @@ import { drawChart } from './charts.js';
 
 const DEFAULT_LAT = 39.9239, DEFAULT_LON = -105.0886;
 
+// Unit toggle state
+let useMetric = localStorage.getItem('weatherUnits') === 'metric';
+
+function toC(f) { return Math.round((f - 32) * 5 / 9); }
+function mphToKmh(mph) { return Math.round(mph * 1.60934); }
+function convertTemp(f) { return useMetric ? toC(f) : f; }
+function tempUnit() { return useMetric ? '°C' : '°F'; }
+function windUnit() { return useMetric ? 'km/h' : 'mph'; }
+function convertWind(mph) { return useMetric ? mphToKmh(mph) : mph; }
+function convertWindStr(s) {
+  // "10 mph" or "10 to 15 mph" → convert numbers
+  if (!useMetric) return s;
+  return s.replace(/(\d+)\s*mph/gi, (_, n) => `${mphToKmh(parseInt(n))} km/h`);
+}
+
 async function loadWeather(lat, lon) {
   const app = document.getElementById('app');
   app.innerHTML = '<div class="loading"><div class="spinner"></div>Loading forecast…</div>';
@@ -35,12 +50,18 @@ function render(location, hourly, periods, gridProps, sunTimes) {
     </div>` : '';
 
   app.innerHTML = `
-    <div class="location-name">📍 ${location}</div>
+    <div class="location-row">
+      <div class="location-name">📍 ${location}</div>
+      <div class="unit-toggle" id="unitToggle">
+        <span class="${!useMetric ? 'active' : ''}">°F</span>
+        <span class="${useMetric ? 'active' : ''}">°C</span>
+      </div>
+    </div>
     <div class="current">
-      <div class="temp">${now.temperature}°F</div>
+      <div class="temp">${convertTemp(now.temperature)}${tempUnit()}</div>
       <div class="desc">${now.shortForecast}</div>
       <div class="details">
-        <span>💨 Wind <b>${now.windSpeed} ${windDir}</b></span>
+        <span>💨 Wind <b>${convertWindStr(now.windSpeed)} ${windDir}</b></span>
         <span>💧 Humidity <b>${now.relativeHumidity?.value ?? '--'}%</b></span>
         <span>🌧 Precip <b>${now.probabilityOfPrecipitation?.value ?? 0}%</b></span>
       </div>
@@ -71,11 +92,12 @@ function render(location, hourly, periods, gridProps, sunTimes) {
   const fc = document.getElementById('forecastCards');
   periods.slice(0, 14).forEach(p => {
     const isNight = !p.isDaytime;
+    const dispTemp = convertTemp(p.temperature);
     const cls = p.temperature > 80 ? 'hot' : p.temperature < 40 ? 'cold' : '';
     fc.innerHTML += `<div class="forecast-card">
       <div class="period-name">${isNight ? '🌙' : '☀️'} ${p.name}</div>
-      <div class="period-temp ${cls}">${p.temperature}°</div>
-      <div class="period-detail">${p.shortForecast} · Wind ${p.windSpeed} ${p.windDirection}</div>
+      <div class="period-temp ${cls}">${dispTemp}°</div>
+      <div class="period-detail">${p.shortForecast} · Wind ${convertWindStr(p.windSpeed)} ${p.windDirection}</div>
     </div>`;
   });
 
@@ -88,18 +110,27 @@ function render(location, hourly, periods, gridProps, sunTimes) {
   });
   const allSkyCover = parseGridTimeSeries(gridProps?.skyCover, h);
   const allWindGustsKmh = parseGridTimeSeries(gridProps?.windGust, h);
-  const allWindGusts = allWindGustsKmh.map(v => v != null ? Math.round(v * 0.621371) : null);
+  const allWindGustsMph = allWindGustsKmh.map(v => v != null ? Math.round(v * 0.621371) : null);
+  const allWindSpeedsMph = h.map(p => parseInt(p.windSpeed));
 
-  const allDatasets = {
-    temp: { label: 'Temperature (°F)', data: h.map(p => p.temperature), color: '#4fc3f7', fill: true },
-    precip: { label: 'Precipitation (%)', data: h.map(p => p.probabilityOfPrecipitation?.value ?? 0), color: '#66bb6a', fill: true },
-    wind: {
-      label: 'Wind Speed (mph)', data: h.map(p => parseInt(p.windSpeed)), color: '#ffa726', fill: false,
-      secondary: { label: 'Wind Gusts (mph)', data: allWindGusts, color: '#ef5350' }
-    },
-    humidity: { label: 'Humidity (%)', data: h.map(p => p.relativeHumidity?.value ?? 0), color: '#ab47bc', fill: true },
-    skyCover: { label: 'Sky Cover (%)', data: allSkyCover, color: '#78909c', fill: true }
-  };
+  function buildDatasets() {
+    const wu = windUnit();
+    const tu = tempUnit();
+    const windData = useMetric ? allWindSpeedsMph.map(v => mphToKmh(v)) : allWindSpeedsMph;
+    const gustData = useMetric ? allWindGustsKmh.map(v => v != null ? Math.round(v) : null) : allWindGustsMph;
+    return {
+      temp: { label: `Temperature (${tu})`, data: h.map(p => convertTemp(p.temperature)), color: '#4fc3f7', fill: true },
+      precip: { label: 'Precipitation (%)', data: h.map(p => p.probabilityOfPrecipitation?.value ?? 0), color: '#66bb6a', fill: true },
+      wind: {
+        label: `Wind Speed (${wu})`, data: windData, color: '#ffa726', fill: false,
+        secondary: { label: `Wind Gusts (${wu})`, data: gustData, color: '#ef5350' }
+      },
+      humidity: { label: 'Humidity (%)', data: h.map(p => p.relativeHumidity?.value ?? 0), color: '#ab47bc', fill: true },
+      skyCover: { label: 'Sky Cover (%)', data: allSkyCover, color: '#78909c', fill: true }
+    };
+  }
+
+  let allDatasets = buildDatasets();
 
   let activeChart = 'temp';
 
@@ -151,6 +182,12 @@ function render(location, hourly, periods, gridProps, sunTimes) {
     tab.classList.add('active');
     activeChart = tab.dataset.chart;
     renderChart();
+  });
+
+  document.getElementById('unitToggle').addEventListener('click', () => {
+    useMetric = !useMetric;
+    localStorage.setItem('weatherUnits', useMetric ? 'metric' : 'imperial');
+    render(location, hourly, periods, gridProps, sunTimes);
   });
 }
 

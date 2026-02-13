@@ -101,8 +101,9 @@ export function drawChart(key, labels, datasets, sunTimes) {
     });
   }
 
-  const unitMap = { temp: '°F', wind: 'mph', precip: '%', humidity: '%', skyCover: '%' };
-  const unit = unitMap[key] || '';
+  // Extract unit from label e.g. "Temperature (°F)" → "°F"
+  const match = ds.label.match(/\(([^)]+)\)/);
+  const unit = match ? match[1] : '';
 
   const annotations = buildSunAnnotations(labels, sunTimes);
 
