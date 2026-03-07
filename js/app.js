@@ -276,9 +276,6 @@ document.addEventListener('click', e => {
   const indicator = () => document.getElementById('pullIndicator');
   const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
 
-  // Wrap the entire page content so we can translate it
-  const wrapper = document.querySelector('.container');
-
   document.addEventListener('touchstart', e => {
     if (atTop()) {
       startY = e.touches[0].clientY;
@@ -295,8 +292,8 @@ document.addEventListener('click', e => {
       const pull = Math.min(dy * 0.5, 80);
       triggered = pull >= THRESHOLD * 0.5;
       const el = indicator();
-      wrapper.style.transform = `translateY(${pull}px)`;
-      wrapper.style.transition = 'none';
+      const w = document.querySelector('.container');
+      if (w) { w.style.transform = `translateY(${pull}px)`; w.style.transition = 'none'; }
       el.style.height = `${pull}px`;
       el.style.opacity = triggered ? '1' : `${pull / (THRESHOLD * 0.5)}`;
       el.textContent = triggered ? '↻ Release to refresh' : '↓ Pull to refresh';
@@ -307,11 +304,13 @@ document.addEventListener('click', e => {
     if (!active) return;
     active = false;
     const el = indicator();
-    wrapper.style.transform = '';
-    wrapper.style.transition = 'transform .3s ease';
+    const w = document.querySelector('.container');
+    if (w) { w.style.transform = ''; w.style.transition = 'transform .3s ease'; }
     el.style.height = '0';
     el.style.opacity = '0';
-    if (triggered && currentLat) loadWeather(currentLat, currentLon);
+    if (triggered && currentLat != null) {
+      loadWeather(currentLat, currentLon);
+    }
   });
 }
 
