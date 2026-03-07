@@ -1,4 +1,4 @@
-import { fetchWeatherData, parseGridTimeSeries, fetchSunTimes } from './api.js';
+import { fetchWeatherData, parseGridTimeSeries, parseAccumulation, fetchSunTimes } from './api.js';
 import { drawChart } from './charts.js';
 
 const DEFAULT_LAT = 39.9239, DEFAULT_LON = -105.0886;
@@ -31,6 +31,27 @@ async function loadWeather(lat, lon) {
   } catch (e) {
     app.innerHTML = `<div class="error">⚠️ ${e.message}<br><small>Try again or search a different location</small></div>`;
   }
+}
+
+function buildPrecipSummary(hours, rain, snow) {
+  // Group by calendar day and sum
+  const days = {};
+  hours.forEach((h, i) => {
+    const d = new Date(h.startTime);
+    const key = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    if (!days[key]) days[key] = { rain: 0, snow: 0 };
+    days[key].rain += rain[i] || 0;
+    days[key].snow += snow[i] || 0;
+  });
+  const entries = Object.entries(days).filter(([_, v]) => v.rain > 0.005 || v.snow > 0.005);
+  if (!entries.length) return '';
+  const cards = entries.map(([day, v]) => {
+    const parts = [];
+    if (v.rain > 0.005) parts.push(`🌧 ${v.rain.toFixed(2)}″`);
+    if (v.snow > 0.005) parts.push(`❄️ ${v.snow.toFixed(1)}″`);
+    return `<div class="precip-day"><div class="precip-day-label">${day}</div><div class="precip-day-values">${parts.join(' · ')}</div></div>`;
+  }).join('');
+  return `<div class="section-title"><span>🌧</span> Precipitation Totals</div><div class="precip-summary">${cards}</div>`;
 }
 
 function render(location, hourly, periods, gridProps, sunTimes) {
@@ -68,6 +89,7 @@ function render(location, hourly, periods, gridProps, sunTimes) {
       ${sunSummary}
     </div>
     
+    ${buildPrecipSummary(h, allRain, allSnow)}
     <div class="section-title"><span>📊</span> Hourly Charts</div>
     <div class="time-nav" id="timeNav">
       <button id="prevDay" class="time-btn" disabled>◀</button>
@@ -84,6 +106,7 @@ function render(location, hourly, periods, gridProps, sunTimes) {
       <div class="tab" data-chart="wind">Wind</div>
       <div class="tab" data-chart="humidity">Humid</div>
       <div class="tab" data-chart="skyCover">Sky</div>
+      <div class="tab" data-chart="rainSnow">Rain/Snow</div>
     </div>
     <div class="chart-card">
       <div style="position:relative;height:220px;touch-action:pan-x"><canvas id="chart"></canvas></div>
@@ -116,6 +139,8 @@ function render(location, hourly, periods, gridProps, sunTimes) {
   const allWindGustsKmh = parseGridTimeSeries(gridProps?.windGust, h);
   const allWindGustsMph = allWindGustsKmh.map(v => v != null ? Math.round(v * 0.621371) : null);
   const allWindSpeedsMph = h.map(p => parseInt(p.windSpeed));
+  const allRain = parseAccumulation(gridProps?.quantitativePrecipitation, h);
+  const allSnow = parseAccumulation(gridProps?.snowfallAmount, h);
 
   function buildDatasets() {
     const wu = windUnit();
@@ -130,7 +155,11 @@ function render(location, hourly, periods, gridProps, sunTimes) {
         secondary: { label: `Wind Gusts (${wu})`, data: gustData, color: '#ef5350' }
       },
       humidity: { label: 'Humidity (%)', data: h.map(p => p.relativeHumidity?.value ?? 0), color: '#ab47bc', fill: true },
-      skyCover: { label: 'Sky Cover (%)', data: allSkyCover, color: '#78909c', fill: true }
+      skyCover: { label: 'Sky Cover (%)', data: allSkyCover, color: '#78909c', fill: true },
+      rainSnow: {
+        label: 'Rain (in)', data: allRain, color: '#42a5f5', fill: true, chartType: 'bar',
+        secondary: { label: 'Snow (in)', data: allSnow, color: '#b0bec5', chartType: 'bar' }
+      }
     };
   }
 

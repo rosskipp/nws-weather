@@ -48,6 +48,29 @@ export function parseGridTimeSeries(series, hourlyPeriods) {
   });
 }
 
+// Parse grid time series and aggregate into per-period accumulation (mm → inches)
+export function parseAccumulation(series, hourlyPeriods) {
+  if (!series || !series.values) return hourlyPeriods.map(() => 0);
+  const parsed = [];
+  for (const entry of series.values) {
+    const [timeStr, durStr] = entry.validTime.split('/');
+    const start = new Date(timeStr);
+    const hourMatch = durStr.match(/(\d+)H/);
+    const durationHours = hourMatch ? parseInt(hourMatch[1]) : 1;
+    // Distribute total evenly across duration hours
+    const perHour = (entry.value || 0) / durationHours;
+    for (let i = 0; i < durationHours; i++) {
+      parsed.push({ time: new Date(start.getTime() + i * 3600000), value: perHour });
+    }
+  }
+  return hourlyPeriods.map(p => {
+    const t = new Date(p.startTime).getTime();
+    const match = parsed.find(g => Math.abs(g.time.getTime() - t) < 1800000);
+    // Convert mm to inches
+    return match ? Math.round(match.value / 25.4 * 100) / 100 : 0;
+  });
+}
+
 export async function fetchWeatherData(lat, lon) {
   const points = await nws(`${API}/points/${lat.toFixed(4)},${lon.toFixed(4)}`);
   const p = points.properties;

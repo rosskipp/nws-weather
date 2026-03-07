@@ -79,26 +79,42 @@ export function drawChart(key, labels, datasets, sunTimes) {
   const ctx = document.getElementById('chart').getContext('2d');
 
   const chartDatasets = [];
+  const isBar = ds.chartType === 'bar';
 
-  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-  gradient.addColorStop(0, ds.color + '40');
-  gradient.addColorStop(1, ds.color + '05');
-  chartDatasets.push({
-    label: ds.label, data: ds.data,
-    borderColor: ds.color, backgroundColor: ds.fill ? gradient : 'transparent',
-    borderWidth: 2, pointRadius: 0, pointHitRadius: 10,
-    stepped: 'before', tension: 0, fill: ds.fill
-  });
-
-  if (ds.secondary) {
-    const s = ds.secondary;
+  if (isBar) {
     chartDatasets.push({
-      label: s.label, data: s.data,
-      borderColor: s.color, backgroundColor: 'transparent',
-      borderWidth: 2, pointRadius: 0, pointHitRadius: 10,
-      stepped: 'before', tension: 0, fill: false,
-      borderDash: [6, 3]
+      type: 'bar', label: ds.label, data: ds.data,
+      backgroundColor: ds.color + '99', borderColor: ds.color,
+      borderWidth: 1, barPercentage: 0.9, categoryPercentage: 0.8
     });
+    if (ds.secondary) {
+      chartDatasets.push({
+        type: 'bar', label: ds.secondary.label, data: ds.secondary.data,
+        backgroundColor: ds.secondary.color + '99', borderColor: ds.secondary.color,
+        borderWidth: 1, barPercentage: 0.9, categoryPercentage: 0.8
+      });
+    }
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, ds.color + '40');
+    gradient.addColorStop(1, ds.color + '05');
+    chartDatasets.push({
+      label: ds.label, data: ds.data,
+      borderColor: ds.color, backgroundColor: ds.fill ? gradient : 'transparent',
+      borderWidth: 2, pointRadius: 0, pointHitRadius: 10,
+      stepped: 'before', tension: 0, fill: ds.fill
+    });
+
+    if (ds.secondary) {
+      const s = ds.secondary;
+      chartDatasets.push({
+        label: s.label, data: s.data,
+        borderColor: s.color, backgroundColor: 'transparent',
+        borderWidth: 2, pointRadius: 0, pointHitRadius: 10,
+        stepped: 'before', tension: 0, fill: false,
+        borderDash: [6, 3]
+      });
+    }
   }
 
   // Extract unit from label e.g. "Temperature (°F)" → "°F"
@@ -108,7 +124,7 @@ export function drawChart(key, labels, datasets, sunTimes) {
   const annotations = buildSunAnnotations(labels, sunTimes);
 
   charts.main = new Chart(ctx, {
-    type: 'line',
+    type: isBar ? 'bar' : 'line',
     data: { labels: labels.map(l => l.text), datasets: chartDatasets },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -126,8 +142,8 @@ export function drawChart(key, labels, datasets, sunTimes) {
       scales: {
         x: { ticks: { color: '#556677', maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } }, grid: { color: '#1e334730' } },
         y: {
-          min: ['precip', 'humidity', 'skyCover'].includes(key) ? 0 : (() => { const vals = chartDatasets.flatMap(d => d.data.filter(v => v != null)); return Math.floor(Math.min(...vals) - 5); })(),
-          max: ['precip', 'humidity', 'skyCover'].includes(key) ? 100 : (() => { const vals = chartDatasets.flatMap(d => d.data.filter(v => v != null)); return Math.ceil(Math.max(...vals) + 5); })(),
+          min: ['precip', 'humidity', 'skyCover', 'rainSnow'].includes(key) ? 0 : (() => { const vals = chartDatasets.flatMap(d => d.data.filter(v => v != null)); return Math.floor(Math.min(...vals) - 5); })(),
+          max: ['precip', 'humidity', 'skyCover'].includes(key) ? 100 : key === 'rainSnow' ? undefined : (() => { const vals = chartDatasets.flatMap(d => d.data.filter(v => v != null)); return Math.ceil(Math.max(...vals) + 5); })(),
           ticks: { color: '#556677', font: { size: 11 } }, grid: { color: '#1e334730' }
         }
       }
