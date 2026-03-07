@@ -269,50 +269,8 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.search-box')) searchResults.classList.remove('active');
 });
 
-// Pull to refresh (iOS PWA compatible)
-{
-  const THRESHOLD = 70;
-  let startY = 0, active = false, triggered = false;
-  const indicator = () => document.getElementById('pullIndicator');
-  const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
-
-  document.addEventListener('touchstart', e => {
-    if (atTop()) {
-      startY = e.touches[0].clientY;
-      active = true;
-      triggered = false;
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchmove', e => {
-    if (!active) return;
-    const dy = e.touches[0].clientY - startY;
-    if (dy > 0 && atTop()) {
-      e.preventDefault();
-      const pull = Math.min(dy * 0.5, 80);
-      triggered = pull >= THRESHOLD * 0.5;
-      const el = indicator();
-      const w = document.querySelector('.container');
-      if (w) { w.style.transform = `translateY(${pull}px)`; w.style.transition = 'none'; }
-      el.style.height = `${pull}px`;
-      el.style.opacity = triggered ? '1' : `${pull / (THRESHOLD * 0.5)}`;
-      el.textContent = triggered ? '↻ Release to refresh' : '↓ Pull to refresh';
-    }
-  }, { passive: false });
-
-  document.addEventListener('touchend', () => {
-    if (!active) return;
-    active = false;
-    const el = indicator();
-    const w = document.querySelector('.container');
-    if (w) { w.style.transform = ''; w.style.transition = 'transform .3s ease'; }
-    el.style.height = '0';
-    el.style.opacity = '0';
-    if (triggered && currentLat != null) {
-      loadWeather(currentLat, currentLon);
-    }
-  });
-}
+// No custom pull-to-refresh — iOS PWA doesn't support it reliably.
+// Refresh button in header is the primary refresh mechanism.
 
 // Init
 loadWeather(DEFAULT_LAT, DEFAULT_LON);

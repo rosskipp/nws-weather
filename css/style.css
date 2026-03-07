@@ -1,6 +1,5 @@
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0f1923;--card:#162230;--card2:#1a2a3a;--accent:#4fc3f7;--accent2:#81d4fa;--text:#e0e6ed;--text2:#8899aa;--green:#66bb6a;--orange:#ffa726;--red:#ef5350;--purple:#ab47bc;--border:#1e3347;--radius:16px}
-html,body{overscroll-behavior-y:none}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 .container{max-width:900px;margin:0 auto;padding:16px}
 header{text-align:center;padding:20px 0 10px}
@@ -76,11 +75,10 @@ header h1{font-size:1.4rem;font-weight:600;color:var(--accent)}
   .forecast-card .period-name{font-size:.85rem}
   .location-name{font-size:1rem;margin-bottom:14px}
 }
-.pull-indicator{position:fixed;top:0;left:0;right:0;height:0;overflow:hidden;text-align:center;color:var(--text2);font-size:.85rem;display:flex;align-items:center;justify-content:center;opacity:0;background:var(--bg);z-index:100}
 .location-actions{display:flex;align-items:center;gap:8px}
-.refresh-btn{background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:8px;width:32px;height:32px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.refresh-btn{background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:10px;width:38px;height:38px;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;-webkit-tap-highlight-color:transparent}
 .refresh-btn:hover{color:var(--accent);border-color:var(--accent)}
-.refresh-btn:active{transform:rotate(180deg)}
+.refresh-btn:active{color:var(--accent);transform:rotate(360deg);transition:transform .4s ease}
 .precip-summary{display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch}
 .precip-day{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;min-width:110px;text-align:center;flex-shrink:0}
 .precip-day-label{font-size:.8rem;color:var(--text2);margin-bottom:4px;font-weight:600}
