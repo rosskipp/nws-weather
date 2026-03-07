@@ -75,6 +75,10 @@ header h1{font-size:1.4rem;font-weight:600;color:var(--accent)}
   .forecast-card .period-name{min-width:auto}
   .location-name{font-size:1rem;margin-bottom:14px}
 }
+.location-actions{display:flex;align-items:center;gap:8px}
+.refresh-btn{background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:8px;width:32px;height:32px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.refresh-btn:hover{color:var(--accent);border-color:var(--accent)}
+.refresh-btn:active{transform:rotate(180deg)}
 .precip-summary{display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch}
 .precip-day{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;min-width:110px;text-align:center;flex-shrink:0}
 .precip-day-label{font-size:.8rem;color:var(--text2);margin-bottom:4px;font-weight:600}

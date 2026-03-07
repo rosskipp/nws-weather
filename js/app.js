@@ -18,7 +18,9 @@ function convertWindStr(s) {
   return s.replace(/(\d+)\s*mph/gi, (_, n) => `${mphToKmh(parseInt(n))} km/h`);
 }
 
+let currentLat, currentLon;
 async function loadWeather(lat, lon) {
+  currentLat = lat; currentLon = lon;
   const app = document.getElementById('app');
   app.innerHTML = '<div class="loading"><div class="spinner"></div>Loading forecast…</div>';
   try {
@@ -75,9 +77,12 @@ function render(location, hourly, periods, gridProps, sunTimes) {
   app.innerHTML = `
     <div class="location-row">
       <div class="location-name">📍 ${location}</div>
-      <div class="unit-toggle" id="unitToggle">
+      <div class="location-actions">
+        <button class="refresh-btn" id="refreshBtn" title="Refresh">↻</button>
+        <div class="unit-toggle" id="unitToggle">
         <span class="${!useMetric ? 'active' : ''}">°F</span>
         <span class="${useMetric ? 'active' : ''}">°C</span>
+      </div>
       </div>
     </div>
     <div class="current">
@@ -225,6 +230,10 @@ function render(location, hourly, periods, gridProps, sunTimes) {
     useMetric = !useMetric;
     localStorage.setItem('weatherUnits', useMetric ? 'metric' : 'imperial');
     render(location, hourly, periods, gridProps, sunTimes);
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', () => {
+    loadWeather(currentLat, currentLon);
   });
 }
 
