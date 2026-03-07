@@ -60,6 +60,8 @@ function render(location, hourly, periods, gridProps, sunTimes) {
   let windowStart = 0;
   let WINDOW_SIZE = 48;
   const h = allHours; // keep full set, we'll slice in chart rendering
+  const allRain = parseAccumulation(gridProps?.quantitativePrecipitation, h);
+  const allSnow = parseAccumulation(gridProps?.snowfallAmount, h);
   const app = document.getElementById('app');
   const windDir = now.windDirection;
 
@@ -139,8 +141,6 @@ function render(location, hourly, periods, gridProps, sunTimes) {
   const allWindGustsKmh = parseGridTimeSeries(gridProps?.windGust, h);
   const allWindGustsMph = allWindGustsKmh.map(v => v != null ? Math.round(v * 0.621371) : null);
   const allWindSpeedsMph = h.map(p => parseInt(p.windSpeed));
-  const allRain = parseAccumulation(gridProps?.quantitativePrecipitation, h);
-  const allSnow = parseAccumulation(gridProps?.snowfallAmount, h);
 
   function buildDatasets() {
     const wu = windUnit();
