@@ -75,6 +75,7 @@ header h1{font-size:1.4rem;font-weight:600;color:var(--accent)}
   .forecast-card .period-name{min-width:auto}
   .location-name{font-size:1rem;margin-bottom:14px}
 }
+.pull-indicator{height:0;overflow:hidden;text-align:center;color:var(--text2);font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:height .2s,opacity .2s;opacity:0;background:var(--bg)}
 .location-actions{display:flex;align-items:center;gap:8px}
 .refresh-btn{background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:8px;width:32px;height:32px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .refresh-btn:hover{color:var(--accent);border-color:var(--accent)}

@@ -269,6 +269,39 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.search-box')) searchResults.classList.remove('active');
 });
 
+// Pull to refresh
+let pullStartY = 0, pulling = false;
+const PULL_THRESHOLD = 80;
+
+document.addEventListener('touchstart', e => {
+  if (window.scrollY === 0) {
+    pullStartY = e.touches[0].clientY;
+    pulling = true;
+  }
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!pulling) return;
+  const dy = e.touches[0].clientY - pullStartY;
+  if (dy > 0 && window.scrollY === 0) {
+    const indicator = document.getElementById('pullIndicator');
+    const progress = Math.min(dy / PULL_THRESHOLD, 1);
+    indicator.style.height = `${Math.min(dy * 0.4, 50)}px`;
+    indicator.style.opacity = progress;
+    indicator.textContent = progress >= 1 ? '↻ Release to refresh' : '↓ Pull to refresh';
+  }
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+  if (!pulling) return;
+  pulling = false;
+  const indicator = document.getElementById('pullIndicator');
+  const wasReady = indicator.style.opacity === '1';
+  indicator.style.height = '0';
+  indicator.style.opacity = '0';
+  if (wasReady && currentLat) loadWeather(currentLat, currentLon);
+});
+
 // Init
 loadWeather(DEFAULT_LAT, DEFAULT_LON);
 
