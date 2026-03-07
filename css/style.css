@@ -41,12 +41,12 @@ header h1{font-size:1.4rem;font-weight:600;color:var(--accent)}
 .chart-card h3{font-size:.85rem;color:var(--text2);margin-bottom:12px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
 .chart-card canvas{width:100%!important}
 .forecast-cards{display:grid;gap:10px}
-.forecast-card{background:var(--card);border-radius:var(--radius);padding:16px 20px;border:1px solid var(--border);display:flex;align-items:center;gap:16px}
-.forecast-card .period-name{font-weight:600;min-width:110px;font-size:.9rem}
-.forecast-card .period-temp{font-size:1.3rem;font-weight:700;min-width:55px;text-align:right}
+.forecast-card{background:var(--card);border-radius:var(--radius);padding:16px 20px;border:1px solid var(--border);display:grid;grid-template-columns:140px 55px 1fr;align-items:center;gap:12px}
+.forecast-card .period-name{font-weight:600;font-size:.9rem;white-space:nowrap}
+.forecast-card .period-temp{font-size:1.3rem;font-weight:700;text-align:right}
 .forecast-card .period-temp.hot{color:var(--orange)}
 .forecast-card .period-temp.cold{color:var(--accent)}
-.forecast-card .period-detail{font-size:.82rem;color:var(--text2);flex:1}
+.forecast-card .period-detail{font-size:.82rem;color:var(--text2)}
 .loading{text-align:center;padding:60px 20px;color:var(--text2)}
 .loading .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -71,8 +71,8 @@ header h1{font-size:1.4rem;font-weight:600;color:var(--accent)}
   .tabs{gap:4px;margin-bottom:12px}
   .tab{padding:7px 14px;font-size:.78rem}
   .forecast-cards{gap:8px}
-  .forecast-card{flex-wrap:wrap;gap:8px;padding:12px 14px;border-radius:12px}
-  .forecast-card .period-name{min-width:auto}
+  .forecast-card{grid-template-columns:120px 50px 1fr;gap:8px;padding:12px 14px;border-radius:12px}
+  .forecast-card .period-name{font-size:.85rem}
   .location-name{font-size:1rem;margin-bottom:14px}
 }
 .pull-indicator{height:0;overflow:hidden;text-align:center;color:var(--text2);font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:height .2s,opacity .2s;opacity:0;background:var(--bg)}
