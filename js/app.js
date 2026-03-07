@@ -269,42 +269,51 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.search-box')) searchResults.classList.remove('active');
 });
 
-// Pull to refresh
-let pullStartY = 0, pulling = false, pullActive = false;
-const PULL_THRESHOLD = 80;
+// Pull to refresh (iOS PWA compatible)
+{
+  const THRESHOLD = 70;
+  let startY = 0, active = false, triggered = false;
+  const indicator = () => document.getElementById('pullIndicator');
+  const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
 
-document.addEventListener('touchstart', e => {
-  if (window.scrollY <= 0) {
-    pullStartY = e.touches[0].clientY;
-    pulling = true;
-    pullActive = false;
-  }
-}, { passive: true });
+  // Wrap the entire page content so we can translate it
+  const wrapper = document.querySelector('.container');
 
-document.addEventListener('touchmove', e => {
-  if (!pulling) return;
-  const dy = e.touches[0].clientY - pullStartY;
-  if (dy > 10 && window.scrollY <= 0) {
-    pullActive = true;
-    e.preventDefault();
-    const indicator = document.getElementById('pullIndicator');
-    const progress = Math.min(dy / PULL_THRESHOLD, 1);
-    indicator.style.height = `${Math.min(dy * 0.4, 50)}px`;
-    indicator.style.opacity = progress;
-    indicator.textContent = progress >= 1 ? '↻ Release to refresh' : '↓ Pull to refresh';
-  }
-}, { passive: false });
+  document.addEventListener('touchstart', e => {
+    if (atTop()) {
+      startY = e.touches[0].clientY;
+      active = true;
+      triggered = false;
+    }
+  }, { passive: true });
 
-document.addEventListener('touchend', () => {
-  if (!pulling) return;
-  pulling = false;
-  const indicator = document.getElementById('pullIndicator');
-  const wasReady = pullActive && parseFloat(indicator.style.opacity) >= 1;
-  indicator.style.height = '0';
-  indicator.style.opacity = '0';
-  pullActive = false;
-  if (wasReady && currentLat) loadWeather(currentLat, currentLon);
-});
+  document.addEventListener('touchmove', e => {
+    if (!active) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0 && atTop()) {
+      e.preventDefault();
+      const pull = Math.min(dy * 0.5, 80);
+      triggered = pull >= THRESHOLD * 0.5;
+      const el = indicator();
+      wrapper.style.transform = `translateY(${pull}px)`;
+      wrapper.style.transition = 'none';
+      el.style.height = `${pull}px`;
+      el.style.opacity = triggered ? '1' : `${pull / (THRESHOLD * 0.5)}`;
+      el.textContent = triggered ? '↻ Release to refresh' : '↓ Pull to refresh';
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (!active) return;
+    active = false;
+    const el = indicator();
+    wrapper.style.transform = '';
+    wrapper.style.transition = 'transform .3s ease';
+    el.style.height = '0';
+    el.style.opacity = '0';
+    if (triggered && currentLat) loadWeather(currentLat, currentLon);
+  });
+}
 
 // Init
 loadWeather(DEFAULT_LAT, DEFAULT_LON);
